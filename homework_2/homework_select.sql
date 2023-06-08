@@ -39,13 +39,12 @@ WHERE StockItemName LIKE '%urgent%' or StockItemName LIKE 'Animal%'
 По каким колонкам делать JOIN подумайте самостоятельно.
 */
 
-SELECT Suppliers.SupplierID,
+SELECT DISTINCT Suppliers.SupplierID,
 Suppliers.SupplierName
 FROM [Purchasing].[Suppliers] AS Suppliers
 LEFT JOIN [Purchasing].[PurchaseOrders] AS [PurchaseOrders] 
 ON Suppliers.SupplierID = PurchaseOrders.SupplierID
-GROUP BY Suppliers.SupplierID, Suppliers.SupplierName
-HAVING COUNT([PurchaseOrderID]) = 0;
+WHERE PurchaseOrderID IS NULL
 
 /*
 3. Заказы (Orders) с товарами ценой (UnitPrice) более 100$
@@ -125,7 +124,7 @@ PurchaseOrders.ExpectedDeliveryDate AS ExpectedDeliveryDate,
 [People].FullName AS ContactPerson
 FROM 
 [Purchasing].[PurchaseOrders]  AS [PurchaseOrders]
-LEFT JOIN [Purchasing].[Suppliers] AS [Suppliers]
+INNER JOIN [Purchasing].[Suppliers] AS [Suppliers]
 ON [PurchaseOrders].SupplierID = [Suppliers].SupplierID 
 INNER JOIN [Application].[DeliveryMethods] AS [DeliveryMethods]
 ON [Suppliers].[DeliveryMethodID] = [DeliveryMethods].[DeliveryMethodID]
@@ -166,7 +165,7 @@ ORDER BY [Invoices].[InvoiceDate] DESC
 Таблицы: Sales.Invoices, Sales.InvoiceLines, Sales.Customers, Warehouse.StockItems.
 */
 
-SELECT  
+SELECT DISTINCT
 [Customers].CustomerID,
 [Customers].CustomerName,
 [Customers].PhoneNumber
@@ -174,12 +173,9 @@ FROM
 [Sales].[Invoices] AS [Invoices]
 INNER JOIN [Sales].[InvoiceLines] AS [InvoiceLines]
 ON [Invoices].InvoiceID = [InvoiceLines].InvoiceID
-LEFT JOIN [Sales].[Customers] AS [Customers]
+INNER JOIN [Sales].[Customers] AS [Customers]
 ON [Invoices].CustomerID = [Customers].CustomerID
 INNER JOIN [Warehouse].[StockItems] AS [StockItems]
 ON [InvoiceLines].[StockItemID] = [StockItems].[StockItemID]
 WHERE [StockItems].StockItemName = 'Chocolate frogs 250g'
-GROUP BY 
-[Customers].CustomerID,
-[Customers].CustomerName,
-[Customers].PhoneNumber;
+ORDER BY [Customers].CustomerID;
