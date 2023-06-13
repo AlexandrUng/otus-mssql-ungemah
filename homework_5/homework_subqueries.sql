@@ -169,10 +169,8 @@ WHERE [StockItems].UnitPrice IN
 (SELECT UnitPrice FROM MaxUnitPrice_CTE))
 
 SELECT 
-[Invoices].InvoiceID,
-[Invoices].DeliveryMethodID,
-[Invoices].DeliveryInstructions,
-[Invoices].PackedByPersonID,
+Customers.DeliveryCityID,
+Cities.CityName,
 [People].FullName
 FROM 
 MaxPriceStockItems_CTE
@@ -180,9 +178,16 @@ INNER JOIN [Sales].[InvoiceLines] AS [InvoiceLines]
 ON MaxPriceStockItems_CTE.StockItemID = [InvoiceLines].StockItemID
 INNER JOIN [Sales].[Invoices] AS [Invoices]
 ON [InvoiceLines].InvoiceID = [Invoices].InvoiceID
+INNER JOIN [Sales].[Customers] AS [Customers]
+ON [Invoices].CustomerID = Customers.CustomerID
+INNER JOIN Application.Cities AS Cities
+ON Customers.DeliveryCityID = Cities.CityID
 LEFT JOIN [Application].[People] AS [People]
 ON [Invoices].PackedByPersonID = [People].PersonID
-;
+
+GROUP BY Customers.DeliveryCityID,
+Cities.CityName,
+[People].FullName;
 
 
 
