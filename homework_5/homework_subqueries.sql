@@ -157,21 +157,22 @@ ORDER BY CustomerTransactions.CustomerID;
 который осуществлял упаковку заказов (PackedByPersonID).
 */
 
+-- 4. вариант 1
 WITH MaxUnitPrice_CTE AS 
 (SELECT DISTINCT TOP 3 UnitPrice
 FROM [Warehouse].[StockItems]
 ORDER BY UnitPrice DESC),
 
 MaxPriceStockItems_CTE AS
-(SELECT StockItemID
+(SELECT StockItemID, UnitPrice
 FROM [Warehouse].[StockItems] AS [StockItems]
 WHERE [StockItems].UnitPrice IN 
 (SELECT UnitPrice FROM MaxUnitPrice_CTE))
 
 SELECT 
-Customers.DeliveryCityID,
-Cities.CityName,
-[People].FullName
+Customers.DeliveryCityID AS DeliveryCityID,
+Cities.CityName AS CityName,
+[People].FullName AS FullName
 FROM 
 MaxPriceStockItems_CTE
 INNER JOIN [Sales].[InvoiceLines] AS [InvoiceLines]
@@ -184,13 +185,46 @@ INNER JOIN Application.Cities AS Cities
 ON Customers.DeliveryCityID = Cities.CityID
 LEFT JOIN [Application].[People] AS [People]
 ON [Invoices].PackedByPersonID = [People].PersonID
-
-GROUP BY Customers.DeliveryCityID,
-Cities.CityName,
-[People].FullName;
+GROUP BY Customers.DeliveryCityID, Cities.CityName, [People].FullName
+ORDER BY DeliveryCityID, CityName, FullName;
 
 
+-- 4. вариант 2
 
+CREATE TABLE #MaxUnitPrice (UnitPrice decimal(18,2));
+INSERT INTO #MaxUnitPrice
+SELECT DISTINCT TOP 3 UnitPrice
+FROM [Warehouse].[StockItems]
+ORDER BY UnitPrice DESC;
+
+CREATE TABLE #MaxPriceStockItems (StockItemID int);
+INSERT INTO #MaxPriceStockItems
+SELECT StockItemID
+FROM [Warehouse].[StockItems] AS [StockItems]
+WHERE [StockItems].UnitPrice IN 
+(SELECT UnitPrice FROM #MaxUnitPrice);
+
+SELECT 
+Customers.DeliveryCityID AS DeliveryCityID,
+Cities.CityName AS CityName,
+[People].FullName AS FullName
+FROM 
+#MaxPriceStockItems
+INNER JOIN [Sales].[InvoiceLines] AS [InvoiceLines]
+ON #MaxPriceStockItems.StockItemID = [InvoiceLines].StockItemID
+INNER JOIN [Sales].[Invoices] AS [Invoices]
+ON [InvoiceLines].InvoiceID = [Invoices].InvoiceID
+INNER JOIN [Sales].[Customers] AS [Customers]
+ON [Invoices].CustomerID = Customers.CustomerID
+INNER JOIN Application.Cities AS Cities
+ON Customers.DeliveryCityID = Cities.CityID
+LEFT JOIN [Application].[People] AS [People]
+ON [Invoices].PackedByPersonID = [People].PersonID
+GROUP BY Customers.DeliveryCityID, Cities.CityName, [People].FullName
+ORDER BY DeliveryCityID, CityName, FullName;
+
+DROP TABLE #MaxUnitPrice;
+DROP TABLE #MaxPriceStockItems;
 
 
 -- ---------------------------------------------------------------------------
